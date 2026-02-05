@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function HowItWorksSection() {
   return (
-    <section className="py-20">
+    <section id="how-it-works" className="py-20">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
         <div className="mx-auto mb-12 max-w-2xl text-center md:mb-16">
           <div className="mb-5 flex justify-center">

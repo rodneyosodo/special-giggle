@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function FeatureSection() {
   return (
-    <section className="py-12 lg:py-20">
+    <section id="features" className="py-12 lg:py-20">
       <div className="mx-auto max-w-7xl px-4">
         <header className="mx-auto max-w-2xl lg:text-center">
           <Badge variant="outline" className="text-indigo-600">

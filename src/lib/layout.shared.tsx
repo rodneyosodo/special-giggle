@@ -4,6 +4,26 @@ import { assetPath } from "./base-path";
 
 export const linkItems: LinkItemType[] = [
   {
+    text: "Features",
+    url: "/#features",
+    active: "url",
+  },
+  {
+    text: "How It Works",
+    url: "/#how-it-works",
+    active: "url",
+  },
+  {
+    text: "Testimonials",
+    url: "/#testimonials",
+    active: "url",
+  },
+  {
+    text: "FAQ",
+    url: "/#faq",
+    active: "url",
+  },
+  {
     icon: <AlbumIcon />,
     text: "Docs",
     url: "/docs",
