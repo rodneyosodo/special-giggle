@@ -1,9 +1,51 @@
-import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
+import type { BaseLayoutProps, LinkItemType } from "fumadocs-ui/layouts/shared";
+import { AlbumIcon, LayoutTemplate } from "lucide-react";
+import Link from "next/link";
+
+export const linkItems: LinkItemType[] = [
+  {
+    icon: <AlbumIcon />,
+    text: "Docs",
+    url: "/docs",
+    active: "nested-url",
+  },
+  {
+    text: "Blogs",
+    url: "/blogs",
+    icon: <LayoutTemplate />,
+    active: "url",
+  },
+];
+
+export const logo = (
+  <>
+    <Link href="/" className="flex items-center space-x-2">
+      <img
+        src="/named-logo-black.svg"
+        className="h-30 w-auto dark:hidden"
+        alt="propeller logo"
+      />
+      <img
+        src="/named-logo-white.svg"
+        className="h-30 w-auto hidden dark:block"
+        alt="propeller logo"
+      />
+    </Link>
+  </>
+);
 
 export function baseOptions(): BaseLayoutProps {
   return {
-    nav: {
-      title: "Propeller",
+    themeSwitch: {
+      enabled: true,
     },
+    searchToggle: {
+      enabled: true,
+    },
+    githubUrl: "https://github.com/absmach/propeller",
+    nav: {
+      title: <>{logo}</>,
+    },
+    links: linkItems,
   };
 }
