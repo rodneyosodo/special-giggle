@@ -1,11 +1,32 @@
-# propeller
+# Propeller Website
 
-This is a Next.js application generated with
-[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
+Propeller Website is a documentation website built with [Next.js](https://nextjs.org/) and [Fumadocs](https://www.fumadocs.dev/), featuring documentation, blog, and OpenAPI reference pages.
 
-It is a Next.js app with [Static Export](https://nextjs.org/docs/app/guides/static-exports) configured.
+## Features
 
-Run development server:
+- Documentation with MDX support
+- Blog with author and date metadata
+- OpenAPI/Swagger API reference documentation
+- Static site generation for optimal performance
+- Search functionality powered by Orama
+- Responsive design with dark mode support
+- SEO-optimized with sitemap and robots.txt generation
+
+## Getting Started
+
+### Prerequisites
+
+- [Bun](https://bun.com/) (recommended) or Node.js
+
+### Installation
+
+```bash
+bun install
+```
+
+### Development
+
+Run the development server:
 
 ```bash
 bun run dev
@@ -13,31 +34,29 @@ bun run dev
 
 Open <http://localhost:3000> with your browser to see the result.
 
-## Explore
+### Build
 
-In the project, you can see:
+Build the static site:
 
-- `lib/source.ts`: Code for content source adapter, [`loader()`](https://fumadocs.dev/docs/headless/source-api) provides the interface to access your content.
-- `lib/layout.shared.tsx`: Shared options for layouts, optional but preferred to keep.
+```bash
+bun run build
+```
 
-| Route                     | Description                                            |
-| ------------------------- | ------------------------------------------------------ |
-| `app/(home)`              | The route group for your landing page and other pages. |
-| `app/docs`                | The documentation layout and pages.                    |
-| `app/api/search/route.ts` | The Route Handler for search.                          |
+The output will be generated in the `out` directory.
 
-### Fumadocs MDX
+### Preview Production Build
 
-A `source.config.ts` config file has been included, you can customise different options like frontmatter schema.
+```bash
+bun run start
+```
 
-Read the [Introduction](https://fumadocs.dev/docs/mdx) for further details.
+### Linting
 
-## Learn More
+```bash
+bun run lint
+bun run lint:fix  # Auto-fix issues
+```
 
-To learn more about Next.js and Fumadocs, take a look at the following
-resources:
+## Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js
-  features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [Fumadocs](https://fumadocs.dev) - learn about Fumadocs
+The site is configured for static export and can be deployed to GitHub Pages (via [`.github/workflows/cd.yml`](.github/workflows/cd.yml)) or any other static hosting provider.
