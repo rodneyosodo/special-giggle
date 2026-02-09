@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   title: "Propeller",
   description: "Deploy Wasm from Cloud to Microcontrollers",
   keywords: ["Propeller", "WebAssembly", "WASM", "Cloud", "Microcontrollers"],
+  appleWebApp: {
+    title: "Propeller",
+  },
 
   openGraph: {
     type: "website",
@@ -53,7 +56,6 @@ export const metadata: Metadata = {
 export default function Layout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
-      <meta name="apple-mobile-web-app-title" content="Propeller" />
       <body className="flex flex-col min-h-screen">
         <Provider>{children}</Provider>
       </body>

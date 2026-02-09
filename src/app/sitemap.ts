@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { blogs, source } from "@/lib/source";
 
-const baseUrl = process.env.NEXT_PUBLIC_URL || "https://propeller.absmach.eu";
+const baseUrl =
+  process.env.NEXT_PUBLIC_BASE_URL || "https://propeller.absmach.eu";
 
 export const dynamic = "force-static";
 

@@ -14,11 +14,6 @@ export const linkItems: LinkItemType[] = [
     active: "url",
   },
   {
-    text: "Testimonials",
-    url: "/#testimonials",
-    active: "url",
-  },
-  {
     text: "FAQ",
     url: "/#faq",
     active: "url",

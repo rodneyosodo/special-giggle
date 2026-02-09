@@ -29,7 +29,7 @@ export default async function Page(props: PageProps) {
         <div>
           <p className="mb-1 text-sm text-fd-muted-foreground">At</p>
           <p className="font-medium">
-            {new Date(page.data.date).toDateString()}
+            {new Date(page.data.date).toLocaleDateString()}
           </p>
         </div>
       </div>
