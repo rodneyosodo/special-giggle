@@ -6,16 +6,16 @@ import { assetPath } from "@/lib/base-path";
 
 export const HeroSection = () => (
   <div className="w-full py-6 sm:py-10 lg:py-20">
-    <div className="container mx-auto px-4 sm:px-6">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-16 xl:px-24">
       <div className="grid grid-cols-1 gap-6 sm:gap-8 items-center lg:grid-cols-2">
-        <div className="flex gap-3 sm:gap-4 flex-col order-2 lg:order-1">
+        <div className="flex gap-3 sm:gap-4 flex-col order-1 lg:order-1">
           <div>
             <Badge variant="outline" className="text-xs sm:text-sm">
               Orchestrate WebAssembly Anywhere
             </Badge>
           </div>
           <div className="flex gap-3 sm:gap-4 flex-col">
-            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl max-w-lg tracking-tighter text-left font-regular">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-5xl xl:text-7xl max-w-lg tracking-tighter text-left font-regular">
               Deploy Wasm from Cloud to Microcontrollers
             </h1>
             <p className="text-base sm:text-lg md:text-xl leading-relaxed tracking-tight text-muted-foreground max-w-md text-left">
@@ -42,7 +42,7 @@ export const HeroSection = () => (
             </Link>
           </div>
         </div>
-        <div className="rounded-md aspect-square flex items-center justify-center p-4 sm:p-8 order-2">
+        <div className="rounded-md aspect-square flex items-center justify-center p-4 sm:p-6 lg:p-4 xl:p-8 order-1 lg:order-2">
           <img
             src={assetPath("/architecture-white.png")}
             className="w-full h-full rounded-md object-contain dark:hidden"
