@@ -56,37 +56,42 @@ export default function FeatureSection() {
   ];
 
   return (
-    <section id="features" className="py-12 lg:py-20">
-      <div className="mx-auto max-w-7xl px-4">
-        <header className="mx-auto max-w-2xl lg:text-center">
-          <Badge variant="outline" className="text-indigo-600">
+    <section id="features" className="py-10 sm:py-12 lg:py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <header className="mx-auto max-w-2xl text-center">
+          <Badge
+            variant="outline"
+            className="text-indigo-600 text-xs sm:text-sm"
+          >
             Features
           </Badge>
-          <h3 className="font-heading mt-4 text-4xl sm:text-5xl lg:text-balance">
+          <h3 className="font-heading mt-3 sm:mt-4 text-2xl sm:text-3xl md:text-4xl lg:text-5xl lg:text-balance">
             WebAssembly Orchestration at Scale
           </h3>
-          <p className="text-muted-foreground mt-6 text-lg">
+          <p className="text-muted-foreground mt-4 sm:mt-6 text-base sm:text-lg">
             Deploy portable, secure, and high-performance Wasm workloads across
             any environment with Propeller's comprehensive feature set.
           </p>
         </header>
-        <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-5xl">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="mx-auto mt-10 sm:mt-16 max-w-2xl lg:mt-24 lg:max-w-5xl">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
                 <Card key={feature.title}>
-                  <CardHeader>
-                    <div className="bg-primary mb-4 flex size-12 items-center justify-center rounded-lg">
+                  <CardHeader className="p-4 sm:p-6">
+                    <div className="bg-primary mb-3 sm:mb-4 flex size-10 sm:size-12 items-center justify-center rounded-lg">
                       <Icon
                         aria-hidden="true"
-                        className="text-primary-foreground size-6"
+                        className="text-primary-foreground size-5 sm:size-6"
                       />
                     </div>
-                    <CardTitle>{feature.title}</CardTitle>
+                    <CardTitle className="text-base sm:text-lg">
+                      {feature.title}
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-base">
+                  <CardContent className="p-4 sm:p-6 pt-0">
+                    <CardDescription className="text-sm sm:text-base">
                       {feature.description}
                     </CardDescription>
                   </CardContent>

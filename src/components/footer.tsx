@@ -28,9 +28,9 @@ const Logo = () => {
 
 export default function FooterSection() {
   return (
-    <footer className="py-12">
-      <div className="container mx-auto space-y-6 px-4">
-        <div className="grid gap-8 md:grid-cols-4">
+    <footer className="py-8 sm:py-12">
+      <div className="container mx-auto space-y-6 px-4 sm:px-6">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
             <Logo />
             <p className="text-muted-foreground text-sm">
@@ -69,7 +69,7 @@ export default function FooterSection() {
             </div>
           </div>
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Resources</h3>
+            <h3 className="text-base sm:text-lg font-semibold">Resources</h3>
             <ul className="[&_li_a]:text-muted-foreground [&_li_a]:hover:text-foreground space-y-2 [&_li_a]:block [&_li_a]:text-sm [&_li_a]:transition-colors [&_li_a]:hover:underline">
               <li>
                 <Link href="/docs">Documentation</Link>
@@ -96,7 +96,7 @@ export default function FooterSection() {
             </ul>
           </div>
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Company</h3>
+            <h3 className="text-base sm:text-lg font-semibold">Company</h3>
             <ul className="[&_li_a]:text-muted-foreground [&_li_a]:hover:text-foreground space-y-2 [&_li_a]:block [&_li_a]:text-sm [&_li_a]:transition-colors [&_li_a]:hover:underline">
               <li>
                 <Link href="https://absmach.eu" target="_blank">
@@ -120,13 +120,17 @@ export default function FooterSection() {
             </ul>
           </div>
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Newsletter</h3>
+            <h3 className="text-base sm:text-lg font-semibold">Newsletter</h3>
             <p className="text-muted-foreground text-sm">
               Stay updated with the latest news and updates from Propeller.
             </p>
-            <div className="flex space-x-2">
-              <InputGroup>
-                <InputGroupInput type="email" placeholder="Your email" />
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:space-x-2">
+              <InputGroup className="w-full">
+                <InputGroupInput
+                  type="email"
+                  placeholder="Your email"
+                  className="w-full"
+                />
                 <InputGroupAddon align="inline-end">
                   <InputGroupButton variant="secondary">
                     <span className="hidden lg:inline">Subscribe</span>
@@ -140,22 +144,24 @@ export default function FooterSection() {
             </p>
           </div>
         </div>
-        <Separator className="lg:mt-10" />
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-muted-foreground">
-          <div className="text-xs text-center md:text-left">
+        <Separator className="mt-6 sm:mt-8 lg:mt-10" />
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-muted-foreground">
+          <div className="text-xs text-center sm:text-left">
             &copy; {new Date().getFullYear()} Abstract Machines. All rights
             reserved.
-            <span className="mx-2">|</span>
-            Licensed under{" "}
-            <Link
-              href="https://github.com/absmach/propeller/blob/main/LICENSE"
-              target="_blank"
-              className="hover:underline"
-            >
-              Apache-2.0
-            </Link>
+            <span className="mx-2 hidden sm:inline">|</span>
+            <span className="block sm:inline mt-1 sm:mt-0">
+              Licensed under{" "}
+              <Link
+                href="https://github.com/absmach/propeller/blob/main/LICENSE"
+                target="_blank"
+                className="hover:underline"
+              >
+                Apache-2.0
+              </Link>
+            </span>
           </div>
-          <div className="flex gap-4 text-xs">
+          <div className="flex flex-wrap justify-center gap-4 text-xs">
             <Link href="/terms" className="hover:underline">
               Terms of Service
             </Link>
@@ -167,8 +173,8 @@ export default function FooterSection() {
             </Link>
           </div>
         </div>
-        <div className="text-center text-xs text-muted-foreground pt-4">
-          <p>
+        <div className="text-center text-xs text-muted-foreground pt-2 sm:pt-4">
+          <p className="max-w-4xl mx-auto">
             This work has been partially supported by the{" "}
             <Link
               href="https://elasticproject.eu/"

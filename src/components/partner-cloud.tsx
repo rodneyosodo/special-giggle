@@ -33,13 +33,13 @@ const logos = [
 
 export default function PartnerCloudSection() {
   return (
-    <section className="py-12 lg:py-20">
-      <div className="mx-auto max-w-7xl px-4">
-        <header className="space-y-2 text-center mb-12">
-          <h3 className="font-heading text-3xl md:text-4xl">
+    <section className="py-10 sm:py-12 lg:py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <header className="space-y-2 text-center mb-8 sm:mb-12">
+          <h3 className="font-heading text-xl sm:text-2xl md:text-3xl lg:text-4xl">
             Built on Industry Standards
           </h3>
-          <p className="text-muted-foreground text-balance md:text-lg">
+          <p className="text-muted-foreground text-sm sm:text-base text-balance md:text-lg">
             Propeller seamlessly integrates with leading WebAssembly runtimes,
             container orchestration platforms, and IoT protocols to power your
             cloud-edge infrastructure.
@@ -49,13 +49,13 @@ export default function PartnerCloudSection() {
           <MarqueeEffect
             className="mask-r-from-80% mask-l-from-80%"
             speed={30}
-            gap={60}
+            gap={40}
           >
             {logos.map((logo) => (
               <div key={logo.name} className="flex items-center">
                 <img
                   src={logo.img}
-                  className="w-[130px] h-[100px] object-contain"
+                  className="w-[80px] h-[60px] sm:w-[100px] sm:h-[80px] lg:w-[130px] lg:h-[100px] object-contain"
                   alt={logo.name}
                 />
               </div>

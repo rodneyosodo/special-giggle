@@ -3,16 +3,18 @@ import { Badge } from "@/components/ui/badge";
 
 export default function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="py-20">
-      <div className="mx-auto max-w-6xl px-4 md:px-6">
-        <div className="mx-auto mb-12 max-w-2xl text-center md:mb-16">
-          <div className="mb-5 flex justify-center">
-            <Badge variant="default">How It Works</Badge>
+    <section id="how-it-works" className="py-12 sm:py-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto mb-8 sm:mb-12 max-w-2xl text-center md:mb-16">
+          <div className="mb-3 sm:mb-5 flex justify-center">
+            <Badge variant="default" className="text-xs sm:text-sm">
+              How It Works
+            </Badge>
           </div>
-          <h2 className="text-3xl font-semibold text-balance md:text-5xl">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-balance md:text-5xl">
             Deploy WebAssembly in Four Steps
           </h2>
-          <p className="text-muted-foreground mt-6 text-base text-balance md:text-lg">
+          <p className="text-muted-foreground mt-4 sm:mt-6 text-sm sm:text-base text-balance md:text-lg">
             From development to deployment, Propeller makes it easy to
             orchestrate Wasm workloads across your entire infrastructure.
           </p>

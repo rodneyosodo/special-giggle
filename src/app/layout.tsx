@@ -1,11 +1,21 @@
 import { Inter } from "next/font/google";
 import { Provider } from "@/components/provider";
 import "./global.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 const inter = Inter({
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "white" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
+};
 
 const baseUrl =
   process.env.NEXT_PUBLIC_BASE_URL || "https://propeller.absmach.eu";
