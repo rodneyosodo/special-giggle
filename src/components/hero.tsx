@@ -44,13 +44,8 @@ export const HeroSection = () => (
         </div>
         <div className="rounded-md aspect-square flex items-center justify-center p-4 sm:p-6 order-1 lg:order-2">
           <img
-            src={assetPath("/architecture-white.png")}
-            className="w-full h-full rounded-md object-contain dark:hidden"
-            alt="Propeller Architecture Diagram showing WebAssembly orchestration"
-          />
-          <img
-            src={assetPath("/architecture-black.png")}
-            className="w-full h-full rounded-md object-contain hidden dark:block"
+            src={assetPath("/architecture.svg")}
+            className="w-full h-full rounded-md object-contain"
             alt="Propeller Architecture Diagram showing WebAssembly orchestration"
           />
         </div>
