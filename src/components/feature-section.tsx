@@ -56,7 +56,7 @@ export default function FeatureSection() {
   ];
 
   return (
-    <section id="features" className="py-10 sm:py-12 lg:py-20">
+    <section id="features" className="py-12 sm:py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <header className="mx-auto max-w-2xl text-center">
           <Badge

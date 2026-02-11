@@ -71,9 +71,9 @@ export default function PropellerUISection() {
   const active = features.find((f) => f.id === activeId) ?? features[0];
 
   return (
-    <section className="py-12 md:py-20 lg:py-32">
+    <section className="py-12 sm:py-20 lg:py-28">
       <div className="bg-linear-to-b absolute inset-0 -z-10 hidden sm:inset-6 sm:rounded-b-3xl dark:block dark:to-[color-mix(in_oklab,var(--color-background)_75%,transparent)]"></div>
-      <div className="mx-auto max-w-7xl space-y-8 px-6 md:space-y-16 lg:space-y-20 dark:[--color-border:color-mix(in_oklab,var(--color-white)_10%,transparent)]">
+      <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 md:space-y-16 lg:space-y-20 dark:[--color-border:color-mix(in_oklab,var(--color-white)_10%,transparent)]">
         <div className="relative z-10 mx-auto max-w-2xl space-y-6 text-center">
           <h2 className="text-balance text-4xl font-semibold lg:text-6xl">
             Propeller UI

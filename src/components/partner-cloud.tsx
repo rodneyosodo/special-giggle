@@ -33,7 +33,7 @@ const logos = [
 
 export default function PartnerCloudSection() {
   return (
-    <section className="py-10 sm:py-12 lg:py-20">
+    <section className="py-12 sm:py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <header className="space-y-2 text-center mb-8 sm:mb-12">
           <h3 className="font-heading text-xl sm:text-2xl md:text-3xl lg:text-4xl">
