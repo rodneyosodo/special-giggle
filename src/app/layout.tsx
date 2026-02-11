@@ -1,10 +1,11 @@
-import { Inter } from "next/font/google";
+import { Rubik } from "next/font/google";
 import { Provider } from "@/components/provider";
 import "./global.css";
 import type { Metadata, Viewport } from "next";
 
-const inter = Inter({
+const rubik = Rubik({
   subsets: ["latin"],
+  style: "normal",
 });
 
 export const viewport: Viewport = {
@@ -65,7 +66,7 @@ export const metadata: Metadata = {
 
 export default function Layout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={inter.className} suppressHydrationWarning>
+    <html lang="en" className={rubik.className} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen">
         <Provider>{children}</Provider>
       </body>
