@@ -86,12 +86,7 @@ export default function FooterSection() {
                 <Link href="/docs/getting-started">Getting Started</Link>
               </li>
               <li>
-                <Link
-                  href="https://github.com/absmach/propeller/blob/main/api/postman_collection.json"
-                  target="_blank"
-                >
-                  API Reference
-                </Link>
+                <Link href="/docs/api">API Reference</Link>
               </li>
             </ul>
           </div>
