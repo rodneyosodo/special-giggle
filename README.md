@@ -1,11 +1,10 @@
 # Propeller Website
 
-Propeller Website is a documentation website built with [Next.js](https://nextjs.org/) and [Fumadocs](https://www.fumadocs.dev/), featuring documentation, blog, and OpenAPI reference pages.
+Propeller Website is a documentation website built with [Next.js](https://nextjs.org/) and [Fumadocs](https://www.fumadocs.dev/), featuring documentation and OpenAPI reference pages.
 
 ## Features
 
 - Documentation with MDX support
-- Blog with author and date metadata
 - OpenAPI/Swagger API reference documentation
 - Static site generation for optimal performance
 - Search functionality powered by Orama

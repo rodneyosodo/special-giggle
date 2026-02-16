@@ -86,12 +86,7 @@ export default function FooterSection() {
                 <Link href="/docs/getting-started">Getting Started</Link>
               </li>
               <li>
-                <Link
-                  href="https://github.com/absmach/propeller/blob/main/api/postman_collection.json"
-                  target="_blank"
-                >
-                  API Reference
-                </Link>
+                <Link href="/docs/api">API Reference</Link>
               </li>
             </ul>
           </div>
@@ -112,7 +107,12 @@ export default function FooterSection() {
                 </Link>
               </li>
               <li>
-                <Link href="/blogs">Blog</Link>
+                <Link
+                  href="https://www.absmach.eu/blog/?category=propeller"
+                  target="_blank"
+                >
+                  Blog
+                </Link>
               </li>
               <li>
                 <Link href="mailto:info@absmach.eu">Contact Us</Link>
@@ -162,13 +162,25 @@ export default function FooterSection() {
             </span>
           </div>
           <div className="flex flex-wrap justify-center gap-4 text-xs">
-            <Link href="/terms" className="hover:underline">
+            <Link
+              href="https://www.absmach.eu/terms/"
+              target="_blank"
+              className="hover:underline"
+            >
               Terms of Service
             </Link>
-            <Link href="/privacy" className="hover:underline">
+            <Link
+              href="https://www.absmach.eu/privacy/"
+              target="_blank"
+              className="hover:underline"
+            >
               Privacy Policy
             </Link>
-            <Link href="/imprint" className="hover:underline">
+            <Link
+              href="https://www.absmach.eu/imprint/"
+              target="_blank"
+              className="hover:underline"
+            >
               Imprint
             </Link>
           </div>
