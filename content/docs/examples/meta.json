@@ -6,8 +6,8 @@
     "addition-base64.mdx",
     "addition-external-runtime.mdx",
     "filesystem.mdx",
-    "content/docs/examples/http-client.mdx",
-    "content/docs/examples/http-server.mdx",
+    "http-client.mdx",
+    "http-server.mdx",
     "tee.mdx",
     "wasi-http.mdx"
   ]
