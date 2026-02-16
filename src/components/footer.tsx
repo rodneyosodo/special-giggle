@@ -13,14 +13,11 @@ const Logo = () => {
   return (
     <Link href="/" className="flex items-center space-x-2">
       <img
-        src={assetPath("/named-logo-black.svg")}
-        className="h-12 w-auto dark:hidden"
-        alt="propeller logo"
-      />
-      <img
-        src={assetPath("/named-logo-white.svg")}
-        className="h-12 w-auto hidden dark:block"
-        alt="propeller logo"
+        src={assetPath("/abstract-machines.svg")}
+        height={120}
+        width={120}
+        className="invert dark:invert-0"
+        alt="Abtract Machines logo"
       />
     </Link>
   );
@@ -34,8 +31,8 @@ export default function FooterSection() {
           <div className="space-y-4">
             <Logo />
             <p className="text-muted-foreground text-sm">
-              Orchestrating WebAssembly workloads across the Cloud-Edge
-              continuum. Powered by Abstract Machines.
+              Abstract Machines, creators of Propeller, builds secure,
+              open-source infrastructure for Cloud-Edge continuum.
             </p>
             <div className="flex space-x-4">
               <Link
