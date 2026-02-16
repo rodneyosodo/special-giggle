@@ -107,7 +107,12 @@ export default function FooterSection() {
                 </Link>
               </li>
               <li>
-                <Link href="/blogs">Blog</Link>
+                <Link
+                  href="https://www.absmach.eu/blog/?category=propeller"
+                  target="_blank"
+                >
+                  Blog
+                </Link>
               </li>
               <li>
                 <Link href="mailto:info@absmach.eu">Contact Us</Link>
