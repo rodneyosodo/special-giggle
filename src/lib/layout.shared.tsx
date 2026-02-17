@@ -39,11 +39,15 @@ export const logo = (
         src={assetPath("/named-logo-black.svg")}
         className="h-10 w-auto dark:hidden"
         alt="propeller logo"
+        width={160}
+        height={40}
       />
       <img
         src={assetPath("/named-logo-white.svg")}
         className="h-10 w-auto hidden dark:block"
         alt="propeller logo"
+        width={160}
+        height={40}
       />
     </div>
   </>

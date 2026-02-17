@@ -65,9 +65,9 @@ export default function FeatureSection() {
           >
             Features
           </Badge>
-          <h3 className="font-heading mt-3 sm:mt-4 text-2xl sm:text-3xl md:text-4xl lg:text-5xl lg:text-balance">
+          <h2 className="font-heading mt-3 sm:mt-4 text-2xl sm:text-3xl md:text-4xl lg:text-5xl lg:text-balance">
             WebAssembly Orchestration at Scale
-          </h3>
+          </h2>
           <p className="text-muted-foreground mt-4 sm:mt-6 text-base sm:text-lg">
             Deploy portable, secure, and high-performance Wasm workloads across
             any environment with Propeller's comprehensive feature set.

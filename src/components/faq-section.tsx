@@ -18,9 +18,9 @@ export const FAQSection = () => (
             FAQ
           </Badge>
           <div className="flex gap-2 flex-col">
-            <h4 className="text-2xl sm:text-3xl md:text-5xl tracking-tighter max-w-xl text-center font-regular">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl tracking-tighter max-w-xl text-center font-regular">
               Frequently Asked Questions
-            </h4>
+            </h2>
             <p className="text-base sm:text-lg leading-relaxed tracking-tight text-muted-foreground max-w-xl text-center px-4 sm:px-0">
               Learn more about Propeller's WebAssembly orchestration
               capabilities and how it can transform your cloud-edge

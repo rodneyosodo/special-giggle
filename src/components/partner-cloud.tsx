@@ -36,9 +36,9 @@ export default function PartnerCloudSection() {
     <section className="py-12 sm:py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <header className="space-y-2 text-center mb-8 sm:mb-12">
-          <h3 className="font-heading text-xl sm:text-2xl md:text-3xl lg:text-4xl">
+          <h2 className="font-heading text-xl sm:text-2xl md:text-3xl lg:text-4xl">
             Built on Industry Standards
-          </h3>
+          </h2>
           <p className="text-muted-foreground text-sm sm:text-base text-balance md:text-lg">
             Propeller seamlessly integrates with leading WebAssembly runtimes,
             container orchestration platforms, and IoT protocols to power your

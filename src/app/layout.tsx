@@ -6,6 +6,8 @@ import type { Metadata } from "next";
 const rubik = Rubik({
   subsets: ["latin"],
   style: "normal",
+  display: "swap",
+  preload: true,
 });
 
 const baseUrl =

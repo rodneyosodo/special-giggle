@@ -14,10 +14,10 @@ const Logo = () => {
     <Link href="/" className="flex items-center space-x-2">
       <img
         src={assetPath("/abstract-machines.svg")}
-        height={120}
         width={120}
+        height={120}
         className="invert dark:invert-0"
-        alt="Abtract Machines logo"
+        alt="Abstract Machines logo"
       />
     </Link>
   );
@@ -38,30 +38,34 @@ export default function FooterSection() {
               <Link
                 href="https://github.com/absmach/propeller"
                 target="_blank"
+                aria-label="Abstract Machines on GitHub"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Github className="size-5" />
+                <Github className="size-5" aria-hidden="true" />
               </Link>
               <Link
                 href="https://twitter.com/absmach"
                 target="_blank"
+                aria-label="Abstract Machines on Twitter"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Twitter className="size-5" />
+                <Twitter className="size-5" aria-hidden="true" />
               </Link>
               <Link
                 href="https://www.linkedin.com/company/abstract-machines"
                 target="_blank"
+                aria-label="Abstract Machines on LinkedIn"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Linkedin className="size-5" />
+                <Linkedin className="size-5" aria-hidden="true" />
               </Link>
               <Link
                 href="https://www.youtube.com/@absmach"
                 target="_blank"
+                aria-label="Abstract Machines on YouTube"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Youtube className="size-5" />
+                <Youtube className="size-5" aria-hidden="true" />
               </Link>
             </div>
           </div>
