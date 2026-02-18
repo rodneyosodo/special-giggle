@@ -1,33 +1,109 @@
 ---
 title: Proplet
-description: Worker nodes that execute WebAssembly tasks in the Propeller system
+description: Worker node that executes WebAssembly tasks on edge or cloud.
 ---
 
-The `proplet` is a worker that executes WebAssembly functions. It can be configured to use either the embedded `wazero` runtime or an external WebAssembly runtime on the host system.
+`proplet` is a Rust worker that runs WebAssembly workloads dispatched by the Manager. It connects over MQTT, receives tasks, fetches or decrypts binaries, and publishes results back.
 
-## Configuration
+## Understand the runtimes
 
-The `proplet` is configured using environment variables.
+Proplet selects a runtime at startup based on configuration. Three runtimes are available.
 
-| Environment Variable            | Description                                                                                          | Default                |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------- |
-| `PROPLET_LOG_LEVEL`             | Log level (e.g., `debug`, `info`, `warn`, `error`)                                                   | `info`                 |
-| `PROPLET_INSTANCE_ID`           | A unique ID for this proplet instance.                                                               | A new UUID             |
-| `PROPLET_MQTT_ADDRESS`          | The address of the MQTT broker.                                                                      | `tcp://localhost:1883` |
-| `PROPLET_MQTT_TIMEOUT`          | The timeout for MQTT operations.                                                                     | `30s`                  |
-| `PROPLET_MQTT_QOS`              | The Quality of Service level for MQTT messages.                                                      | `2`                    |
-| `PROPLET_LIVELINESS_INTERVAL`   | The interval at which the proplet sends liveliness messages.                                         | `10s`                  |
-| `PROPLET_DOMAIN_ID`             | The domain ID for this proplet.                                                                      |                        |
-| `PROPLET_CHANNEL_ID`            | The channel ID for this proplet.                                                                     |                        |
-| `PROPLET_CLIENT_ID`             | The client ID for MQTT authentication.                                                               |                        |
-| `PROPLET_CLIENT_KEY`            | The client key for MQTT authentication.                                                              |                        |
-| `PROPLET_EXTERNAL_WASM_RUNTIME` | The path to an external WebAssembly runtime. If not set, the embedded `wazero` runtime will be used. | `""` (empty string)    |
+**Wasmtime** — the default in-process runtime. Supports WASI, WASM components, filesystem pre-opens, environment variables, and HTTP proxy components. Automatically detects whether a binary is a core module, a component, or an HTTP proxy component.
 
-## Usage
+**Host runtime** — spawns an external binary (e.g. `wasmtime`, `wasmer`) as a subprocess for each task. Passes the WASM file via a temporary file, forwards CLI arguments and environment variables, and captures stdout as the result. Supports daemon mode, where the process continues running and proplet returns immediately.
 
-### Using the Embedded `wazero` Runtime
+**TEE runtime** — used when a Trusted Execution Environment is detected at startup. Pulls an encrypted OCI image, contacts the Attestation Agent for hardware proof, fetches the decryption key from the Key Broker Service, decrypts the image layers inside the TEE, and executes the WASM binary.
 
-By default, `proplet` uses the embedded `wazero` runtime. To run it, simply set the required environment variables and start the application:
+## Configure
+
+Configuration is read from environment variables first. If `PROPLET_DOMAIN_ID`, `PROPLET_CLIENT_ID`, `PROPLET_CLIENT_KEY`, or `PROPLET_CHANNEL_ID` are missing, proplet reads them from a TOML file (default: `config.toml`, section `[proplet]`).
+
+### Identity and logging
+
+| Variable              | Description                                          | Default        |
+| --------------------- | ---------------------------------------------------- | -------------- |
+| `PROPLET_LOG_LEVEL`   | Log level: `trace`, `debug`, `info`, `warn`, `error` | `info`         |
+| `PROPLET_INSTANCE_ID` | Unique ID for this proplet instance                  | Generated UUID |
+
+### MQTT
+
+| Variable                                | Description                                                                    | Default                |
+| --------------------------------------- | ------------------------------------------------------------------------------ | ---------------------- |
+| `PROPLET_MQTT_ADDRESS`                  | Broker address — supports `tcp://`, `ssl://`, `tls://`, `mqtts://`, IPv4, IPv6 | `tcp://localhost:1883` |
+| `PROPLET_MQTT_TIMEOUT`                  | Operation timeout in seconds                                                   | `30`                   |
+| `PROPLET_MQTT_QOS`                      | Quality of Service: `0`, `1`, or `2`                                           | `2`                    |
+| `PROPLET_MQTT_KEEP_ALIVE`               | Keep-alive interval in seconds                                                 | `30`                   |
+| `PROPLET_MQTT_MAX_PACKET_SIZE`          | Maximum MQTT packet size in bytes                                              | `10485760` (10 MB)     |
+| `PROPLET_MQTT_INFLIGHT`                 | Maximum in-flight messages                                                     | `10`                   |
+| `PROPLET_MQTT_REQUEST_CHANNEL_CAPACITY` | Internal channel buffer size for backpressure                                  | `128`                  |
+
+### SuperMQ credentials
+
+| Variable             | Description                | Default |
+| -------------------- | -------------------------- | ------- |
+| `PROPLET_DOMAIN_ID`  | SuperMQ domain ID          |         |
+| `PROPLET_CHANNEL_ID` | SuperMQ channel ID         |         |
+| `PROPLET_CLIENT_ID`  | MQTT username (client ID)  |         |
+| `PROPLET_CLIENT_KEY` | MQTT password (client key) |         |
+
+### Runtime
+
+| Variable                        | Description                                                           | Default      |
+| ------------------------------- | --------------------------------------------------------------------- | ------------ |
+| `PROPLET_EXTERNAL_WASM_RUNTIME` | Path to an external Wasm binary; uses embedded Wasmtime if unset      | `""` (empty) |
+| `PROPLET_HAL_ENABLED`           | Enable Hardware Abstraction Layer support in Wasmtime runtime         | `true`       |
+| `PROPLET_HTTP_ENABLED`          | Enable WASI HTTP proxy component support in Wasmtime runtime          | `false`      |
+| `PROPLET_HTTP_PROXY_PORT`       | Port proplet binds for WASI HTTP proxy components                     | `8222`       |
+| `PROPLET_DIRS`                  | Colon-separated list of host directories to pre-open for WASM modules | `""` (empty) |
+
+### Heartbeat and monitoring
+
+| Variable                      | Description                                       | Default |
+| ----------------------------- | ------------------------------------------------- | ------- |
+| `PROPLET_LIVELINESS_INTERVAL` | Heartbeat publish interval in seconds             | `10`    |
+| `PROPLET_ENABLE_MONITORING`   | Publish per-task CPU and memory metrics over MQTT | `true`  |
+| `PROPLET_METRICS_INTERVAL`    | Proplet-level metrics publish interval in seconds | `10`    |
+
+### TEE and encrypted workloads
+
+| Variable                        | Description                                                | Default               |
+| ------------------------------- | ---------------------------------------------------------- | --------------------- |
+| `PROPLET_KBS_URI`               | Key Broker Service URL — **required when TEE is detected** |                       |
+| `PROPLET_AA_CONFIG_PATH`        | Path to the Attestation Agent TOML config file             |                       |
+| `PROPLET_LAYER_STORE_PATH`      | Local path for OCI image layer cache                       | `/tmp/proplet/layers` |
+| `PROPLET_PULL_CONCURRENT_LIMIT` | Max concurrent OCI layer pull connections                  | `4`                   |
+
+### Miscellaneous
+
+| Variable                        | Description                                         | Default     |
+| ------------------------------- | --------------------------------------------------- | ----------- |
+| `PROPLET_MANAGER_K8S_NAMESPACE` | Kubernetes namespace included in discovery messages | `"default"` |
+
+### Use a config file
+
+If any of the four required credential fields are empty after reading environment variables, proplet reads them from a TOML config file. The path defaults to `config.toml` and can be overridden with `PROPLET_CONFIG_FILE`. The section defaults to `proplet` and can be overridden with `PROPLET_CONFIG_SECTION`.
+
+```toml
+[proplet]
+domain_id = "182c0907-002c-4bfd-8bf3-e4f40c58dde6"
+client_id  = "fa407362-9c5f-41b8-9a09-9d0c0b039287"
+client_key = "991c4d03-2f2c-4ba5-97a6-45bead85457e"
+channel_id = "8c6e1e6c-fc89-43b4-b00b-884a690c7419"
+```
+
+## Build
+
+```bash
+# Standard build (Wasmtime + host runtime)
+cargo build --release
+```
+
+## Run without TEE
+
+### Use the embedded Wasmtime runtime
+
+Set the four required credentials and start. Proplet uses the embedded Wasmtime engine by default.
 
 ```bash
 export PROPLET_DOMAIN_ID="your_domain_id"
@@ -37,11 +113,23 @@ export PROPLET_CLIENT_KEY="your_client_key"
 propeller-proplet
 ```
 
-### Using a Host WebAssembly Runtime
+Expected startup output:
 
-To use an external WebAssembly runtime (e.g., `wasmtime`, `wasmer`), set the `PROPLET_EXTERNAL_WASM_RUNTIME` environment variable to the path of the runtime executable.
+```
+INFO Starting Proplet (Rust) - Instance ID: 39c19eb4-2ee3-45c3-967b-6a2c109f5b7d
+INFO MQTT client created (TLS: false)
+INFO Using Wasmtime runtime
+INFO Starting MQTT event loop
+INFO Starting PropletService
+INFO Published discovery message
+INFO Subscribed to topic: m/.../control/manager/start
+INFO Subscribed to topic: m/.../control/manager/stop
+INFO Subscribed to topic: m/.../registry/server
+```
 
-For example, to use `wasmtime`:
+### Use the host runtime
+
+Set `PROPLET_EXTERNAL_WASM_RUNTIME` to the external binary path. Proplet writes the WASM binary to a temporary file and passes it to the subprocess.
 
 ```bash
 export PROPLET_DOMAIN_ID="your_domain_id"
@@ -49,16 +137,16 @@ export PROPLET_CHANNEL_ID="your_channel_id"
 export PROPLET_CLIENT_ID="your_client_id"
 export PROPLET_CLIENT_KEY="your_client_key"
 export PROPLET_EXTERNAL_WASM_RUNTIME="/usr/bin/wasmtime"
-PROPLET_EXTERNAL_WASM_RUNTIME=wasmtime propeller-proplet
+propeller-proplet
 ```
 
-You will also need to provide cli arguments to the task so that the runtime can be started. For example, to run the `addition` example with `wasmtime`:
+The subprocess command proplet builds looks like this:
 
 ```bash
-wasmtime --invoke add /home/rodneyosodo/code/absmach/propeller/db3d44e8-6e27-464a-aaeb-e643ec298dff.wasm 10 20
+wasmtime run --invoke <function_name> [--env KEY=VALUE ...] [--cli_args...] /tmp/proplet_<task_id>.wasm [inputs...]
 ```
 
-Hence the cli aguments are `--invoke` and `add` and the path to the wasm file. The task will then be created as follows:
+A matching task definition:
 
 ```json
 {
@@ -68,216 +156,264 @@ Hence the cli aguments are `--invoke` and `add` and the path to the wasm file. T
 }
 ```
 
-## **Proplet Command Handling**
+Environment variables are forwarded to the subprocess both as `--env KEY=VALUE` flags and as process environment variables.
 
-### **Start Command Flow**
+#### Enable daemon mode
 
-The start command is sent by the Manager to the Proplet on the topic `m/:domain_id/c/:channel_id/control/manager/start`
+If `daemon: true` is set in the task, proplet spawns the process and returns immediately without waiting for it to exit. The process is tracked in the background and cleaned up automatically when it terminates.
 
-#### 1. **Parse the Start Command**
+### Understand Wasmtime capabilities
 
-The MQTT message payload is unmarshaled into a `StartRequest` structure containing the `AppName` and any required parameters for the application. If the payload is invalid or `AppName` is missing, an error is logged, and no further action is taken.
+The embedded Wasmtime runtime detects the WASM binary type and picks the appropriate execution path:
 
-#### 2. **Publish a Fetch Request**
+- **Core module** — compiled and run using the sync engine with WASI support
+- **Component** — compiled and run using the async engine with component model support
+- **HTTP proxy component** — detected by the presence of `wasi:http/incoming-handler`; proplet binds a TCP listener on `PROPLET_HTTP_PROXY_PORT` and routes incoming requests into the component
 
-A fetch request is sent to the Registry Proxy to retrieve the WebAssembly (Wasm) binary chunks for the specified application. This request is published to the topic `m/:domain_id/c/:channel_id/registry/proplet`.
+Pre-opened host directories are passed to WASI using `PROPLET_DIRS` (colon-separated). The Hardware Abstraction Layer (HAL) integration is enabled by default via `PROPLET_HAL_ENABLED`.
 
-#### 3. **Wait for Wasm Binary Chunks**
+## Run inside a TEE
 
-The system monitors the reception of Wasm chunks from the Registry Proxy, which are published to the topic `m/:domain_id/c/:channel_id/registry/server` and processed by the `handleChunk` function.
+Proplet auto-detects TEE hardware at startup. No flag is needed. Detection checks device files, sysfs paths, `/proc/cpuinfo` flags, and kernel messages in order:
 
-#### 4. **Assemble and Validate Chunks**
+| TEE type    | Detection checks                                                             |
+| ----------- | ---------------------------------------------------------------------------- |
+| Intel TDX   | `/dev/tdx_guest`, `/sys/firmware/tdx_guest`, `tdx_guest` in cpuinfo, dmesg   |
+| AMD SEV/SNP | `/dev/sev`, EFI SEV variables, `sev`/`sev_es`/`sev_snp` in cpuinfo, dmesg    |
+| Intel SGX   | `/dev/sgx_enclave`, `/dev/sgx/enclave`, `/dev/isgx`, `sgx` in cpuinfo, dmesg |
 
-Once all chunks are received, as determined by comparing the number of received chunks to the `TotalChunks` field in the chunk metadata, the chunks are assembled into a complete Wasm binary and validated to ensure integrity.
+When a TEE is found:
 
-#### 5. **Deploy and Run the Application**
+```
+INFO TEE detected automatically: TDX (method: device_file, details: "/dev/tdx_guest exists")
+INFO TEE runtime initialized successfully
+```
 
-The assembled Wasm binary is passed to the Wazero runtime for instantiation and execution, where the specified function (e.g., `main`) in the Wasm module is invoked.
+When no TEE is found:
 
-### **Runtime Functions: StartApp**
+```
+INFO No TEE detected, running in standard mode
+```
 
-The `StartApp` function in `runtime.go` handles the instantiation and execution of Wasm modules. It:
+If a TEE is detected but `PROPLET_KBS_URI` is not set, proplet refuses to start with an error.
 
-1. **Validate Input Parameters**: Ensures `appName`, `wasmBinary`, and `functionName` are provided and valid. Errors are returned if any parameter is missing or invalid.
-2. **Acquire Mutex Lock**: Locks the runtime to ensure thread-safe access to the `modules` map.
-3. **Check for Existing App Instance**: Verifies if the app is already running. If found, an error is returned to prevent duplicate instances.
-4. **Instantiate the Wasm Module**: Passes the `wasmBinary` to the Wazero runtime's `Instantiate` method to create a Wasm module.
-5. **Retrieve the Exported Function**: Locates the `functionName` in the module. If the function is missing, the module is closed, and an error is returned.
-6. **Store the Module in the Runtime**: Saves the instantiated module in the `modules` map for tracking running applications.
-7. **Release Mutex Lock**: Unlocks the runtime after the module is added to the map.
-8. **Return the Exported Function**: Returns the Wasm function for execution.
+### Set TEE environment variables
 
-#### 6. **Log Success or Errors**
+```bash
+export PROPLET_DOMAIN_ID="your_domain_id"
+export PROPLET_CHANNEL_ID="your_channel_id"
+export PROPLET_CLIENT_ID="your_client_id"
+export PROPLET_CLIENT_KEY="your_client_key"
+export PROPLET_MQTT_ADDRESS="your_mqtt_address"
+export PROPLET_KBS_URI="http://10.0.2.2:8082"
+export PROPLET_AA_CONFIG_PATH="/etc/default/proplet.toml"
+propeller-proplet
+```
 
-A success message is logged if the application starts successfully, while detailed errors are logged if any step in the process (e.g., chunk assembly, instantiation, or execution) fails.
+`PROPLET_AA_CONFIG_PATH` points to the Attestation Agent config. A typical file:
 
-### **Stop Command Flow**
+```toml
+[token_configs]
+[token_configs.coco_kbs]
+url = "http://10.0.2.2:8082"
+```
 
-The stop command is sent by the Manager to the Proplet on the topic `m/:domain_id/c/:channel_id/control/manager/stop`
+### Submit an encrypted task
 
-#### 1. **Parse the Stop Command**
+Use `encrypted: true` with `image_url`. Do not include a `file` field. `kbs_resource_path` must match the path used when uploading the key to KBS.
 
-The MQTT message payload is unmarshaled into a `StopRequest` structure containing the `AppName` of the application to stop. If the payload is invalid or `AppName` is missing, an error is logged, and no further action is taken.
+```json
+{
+  "name": "add",
+  "image_url": "docker.io/rodneydav/tee-wasm-addition:encrypted",
+  "encrypted": true,
+  "kbs_resource_path": "default/key/propeller-addition",
+  "cli_args": ["--invoke", "add"],
+  "inputs": [10, 20]
+}
+```
 
-#### 2. **Stop the Application**
+For the full TEE setup guide — including KBS configuration, image encryption with `skopeo`, and running a CVM — see [Encrypted workloads](/docs/tee).
 
-The `StopApp` method in the Wazero runtime is invoked, which checks if the application is running, closes the corresponding Wasm module, and removes the application from the runtime's internal tracking.
+## Understand MQTT topics
 
-### **Runtime Functions: StopApp**
+All topics follow the pattern `m/{domainID}/c/{channelID}/{path}`.
 
-The `StopApp` function in `runtime.go` stops and cleans up a running Wasm module. It:
+| Topic path                     | Direction          | Purpose                                               |
+| ------------------------------ | ------------------ | ----------------------------------------------------- |
+| `control/proplet/create`       | Proplet → Manager  | Startup discovery — sends `proplet_id` and namespace  |
+| `control/proplet/alive`        | Proplet → Manager  | Heartbeat every `PROPLET_LIVELINESS_INTERVAL` seconds |
+| `control/proplet/results`      | Proplet → Manager  | Task execution results or errors                      |
+| `control/proplet/metrics`      | Proplet → Manager  | Proplet-level CPU and memory metrics                  |
+| `control/proplet/task_metrics` | Proplet → Manager  | Per-task CPU, memory, threads, and FD metrics         |
+| `control/manager/start`        | Manager → Proplet  | Start a task                                          |
+| `control/manager/stop`         | Manager → Proplet  | Stop a running task                                   |
+| `registry/proplet`             | Proplet → Registry | Request WASM binary chunks by `app_name`              |
+| `registry/server`              | Registry → Proplet | WASM binary chunks (base64-encoded, indexed)          |
 
-1. **Validate Input Parameters**: Checks if `appName` is provided. If missing, an error is returned.
-2. **Acquire Mutex Lock**: Locks the runtime to ensure thread-safe access to the `modules` map.
-3. **Check for Running App**: Looks up the app in the `modules` map. If the app is not found, an error is returned.
-4. **Close the Wasm Module**: Calls the module's `Close` method to release all resources associated with the app. If closing fails, an error is logged and returned.
-5. **Remove the App from Runtime**: Deletes the app entry from the `modules` map to update the runtime's state.
-6. **Release Mutex Lock**: Unlocks the runtime after the app has been removed from the map.
+## Understand message formats
 
-#### 3. **Log Success or Errors**
+### Start request
 
-A success message is logged with the text `"App '<AppName>' stopped successfully."` if the application stops successfully. If the application is not running or an error occurs during the stop operation, detailed error information is logged.
+Sent by the Manager on `control/manager/start`:
 
-The Manager knows which Proplet is on which channel through the following mechanisms:
-
-1. **Startup Notification (`create` topic):**
-
-   When a Proplet starts, it publishes a message on the topic:
-
-   ```bash
-   m/:domain_id/c/:manager_channel_id/messages/control/proplet/create
-   ```
-
-   The payload of this message includes the `PropletID` and `ChannelID`, notifying the Manager about the mapping of Proplet IDs to their respective channels:
-
-   ```json
-   {
-     "PropletID": "{PropletID}",
-     "ChanID": "{ChannelID}"
-   }
-   ```
-
-2. **Liveliness Updates (`alive` topic):**
-
-   To ensure that the Proplet is still active, it periodically publishes messages on the topic:
-
-   ```bash
-   m/:domain_id/c/:manager_channel_id/messages/control/proplet/alive
-   ```
-
-   The payload contains the same `PropletID` and `ChannelID` information. This helps the Manager maintain an updated map of active Proplets and their channels:
-
-   ```json
-   {
-     "status": "alive",
-     "PropletID": "{PropletID}",
-     "ChanID": "{ChannelID}"
-   }
-   ```
-
-3. **Last Will & Testament (LWT):**
-
-   If the Proplet goes offline unexpectedly, the MQTT broker automatically publishes a message on the same `alive` topic with a payload indicating the Proplet's offline status:
-
-   ```json
-   {
-     "status": "offline",
-     "PropletID": "{PropletID}",
-     "ChanID": "{ChannelID}"
-   }
-   ```
-
-These mechanisms ensure that the Manager is always aware of the active Proplets and their corresponding channels. The Manager can utilize this data to send specific control commands or monitor the Proplets effectively.
-
-### **Registry Workflow**
-
-1. **Proplet Fetches Wasm Binary:**
-   - Publishes a fetch request on the `proplet` topic.
-   - Waits for chunks on the `server` topic.
-
-2. **Proplet Handles Registry Updates:**
-   - Subscribes to the `updateRegistry` topic.
-   - Updates the registry configuration upon receiving a valid payload.
-   - Publishes the status (success or failure) to the `registry` topic.
-
-#### 1. **Fetch Request**
-
-The Proplet uses this topic to request Wasm binary chunks for a specific application from the Registry Proxy.
-
-- **Topic**:
-
-  ```bash
-  m/:domain_id/c/:channel_id/registry/proplet
-  ```
-
-- Payload is a JSON object containing the name of the application (`app_name`) for which the WebAssembly (Wasm) binary chunks are requested:
-
-  ```json
-  {
-    "app_name": "{AppName}"
+```json
+{
+  "id": "2226e867-1f9f-4ff2-b8e7-f0ea46830664",
+  "name": "add",
+  "file": "",
+  "image_url": "docker.io/myorg/add.wasm",
+  "cli_args": ["--invoke", "add"],
+  "inputs": [10, 20],
+  "daemon": false,
+  "encrypted": false,
+  "kbs_resource_path": "",
+  "env": {
+    "KEY": "value"
   }
-  ```
+}
+```
 
-#### 2. **Image Chunks Delivery**
+Either `file` (base64-encoded WASM binary) or `image_url` must be present. For encrypted workloads, only `image_url` is accepted.
 
-The Registry Proxy publishes Wasm binary chunks to this topic for the Proplet to assemble into a complete binary. The Proplet monitors this topic to receive the chunks sequentially.
+### Stop request
 
-- **Topic**:
+Sent by the Manager on `control/manager/stop`:
 
-  ```bash
-  m/:domain_id/c/:channel_id/registry/server
-  ```
+```json
+{
+  "id": "2226e867-1f9f-4ff2-b8e7-f0ea46830664"
+}
+```
 
-- Payload is a JSON object representing a single chunk of the requested Wasm binary:
+### WASM chunk
 
-  ```json
-  {
-    "app_name": "{AppName}",
-    "chunk_idx": {ChunkIndex},
-    "total_chunks": {TotalChunks},
-    "data": "{Base64EncodedChunkData}"
+Delivered by the Registry on `registry/server`:
+
+```json
+{
+  "app_name": "add",
+  "chunk_idx": 0,
+  "total_chunks": 3,
+  "data": "<base64-encoded chunk>"
+}
+```
+
+Chunks are assembled in order using `chunk_idx`. Duplicate chunks are silently discarded. Incomplete assemblies expire after 5 minutes.
+
+### Result message
+
+Published by proplet on `control/proplet/results`:
+
+```json
+{
+  "task_id": "2226e867-1f9f-4ff2-b8e7-f0ea46830664",
+  "proplet_id": "fa407362-9c5f-41b8-9a09-9d0c0b039287",
+  "results": "30\n",
+  "error": null
+}
+```
+
+### Discovery message
+
+Published once at startup on `control/proplet/create`:
+
+```json
+{
+  "proplet_id": "fa407362-9c5f-41b8-9a09-9d0c0b039287",
+  "namespace": "default"
+}
+```
+
+### Heartbeat message
+
+Published periodically on `control/proplet/alive`:
+
+```json
+{
+  "proplet_id": "fa407362-9c5f-41b8-9a09-9d0c0b039287",
+  "status": "alive",
+  "namespace": "default"
+}
+```
+
+## Understand task lifecycle
+
+### Start flow
+
+1. Manager publishes a start request to `control/manager/start`
+2. Proplet validates the request — checks `id`, `name`, and that either `file` or `image_url` is present
+3. If the task is already running, the duplicate command is silently ignored
+4. Binary is resolved in order:
+   - If `file` is non-empty, it is base64-decoded directly
+   - If `image_url` is non-empty and `encrypted` is false, a chunk request is sent to `registry/proplet` and proplet polls until all chunks arrive (60-second timeout)
+   - If `encrypted` is true, the binary is fetched by the TEE runtime from the OCI registry
+5. The runtime executes the task in a spawned async task
+6. Results (stdout) or error are published to `control/proplet/results`
+7. The task is removed from the running task map
+
+### Stop flow
+
+1. Manager publishes a stop request to `control/manager/stop`
+2. Proplet looks up the task in the active runtime
+3. For Wasmtime — the async task handle is aborted
+4. For host runtime — the child process is killed
+5. Process monitoring is stopped and the task is removed from the running task map
+
+### Assemble chunks
+
+Chunks arrive out of order and are stored in a `BTreeMap` keyed by `chunk_idx`. Once `chunks.len() == total_chunks`, the binary is assembled in index order and the chunk state is removed. A background task scans every 60 seconds and evicts assemblies older than 5 minutes, logging a warning with the partial chunk count.
+
+### Publish heartbeat and discovery
+
+On startup proplet publishes a discovery message on `control/proplet/create`. Every `PROPLET_LIVELINESS_INTERVAL` seconds it publishes a heartbeat on `control/proplet/alive` and updates its internal `task_count` from the current running task map.
+
+## Understand monitoring
+
+Proplet publishes two categories of metrics over MQTT.
+
+### Collect proplet-level metrics
+
+Published every `PROPLET_METRICS_INTERVAL` seconds on `control/proplet/metrics`. Includes CPU usage (average across all cores, user seconds, system seconds) and memory usage (RSS, heap allocation figures, optional container cgroup limits). Collected with the `sysinfo` crate.
+
+### Collect per-task metrics
+
+Published on `control/proplet/task_metrics` while a task runs. Proplet attaches to the task's PID (available for the host runtime; falls back to the parent PID for Wasmtime) and samples CPU, memory, disk I/O, thread count, and open file descriptors.
+
+Two monitoring profiles are used automatically:
+
+- **Standard** — 10-second interval, history of 100 samples
+- **Long-running daemon** — 120-second interval, history of 500 samples
+
+A custom profile can be included in the start request via the `monitoringProfile` field:
+
+```json
+{
+  "monitoringProfile": {
+    "enabled": true,
+    "interval": 30,
+    "collect_cpu": true,
+    "collect_memory": true,
+    "collect_disk_io": false,
+    "collect_threads": true,
+    "collect_file_descriptors": false,
+    "export_to_mqtt": true,
+    "retain_history": true,
+    "history_size": 200
   }
-  ```
+}
+```
 
-#### 3. **Registry Configuration Update**
+Disable monitoring for a proplet instance by setting `PROPLET_ENABLE_MONITORING=false`.
 
-- Allows the Manager to update the Proplet's registry configuration dynamically.
+## Understand federated learning support
 
-  ```bash
-  m/:domain_id/c/:channel_id/control/manager/updateRegistry
-  ```
+Proplet has built-in support for Federated Learning (FL) tasks. When a start request includes a `MODEL_URI` environment variable, proplet applies the FL workflow:
 
-- Payload is a JSON object containing the new registry URL and token for updating the Proplet's registry configuration:
+1. Extracts the model version from `MODEL_URI` and fetches the global model from `MODEL_REGISTRY_URL/models/<version>`, injecting it as `MODEL_DATA` into the task environment
+2. If `DATA_STORE_URL` is set, fetches the local dataset from `DATA_STORE_URL/datasets/<proplet_id>` and injects it as `DATASET_DATA`
+3. Runs the WASM task with the model and dataset available as environment variables
+4. If `ROUND_ID` is set and the task output is valid JSON, posts the update via HTTP to `COORDINATOR_URL/update`; falls back to publishing on the MQTT topic `fl/rounds/{round_id}/updates/{proplet_id}` if HTTP fails
+5. Publishes the full FL update envelope on `control/proplet/results`
 
-  ```json
-  {
-    "registry_url": "{NewRegistryURL}",
-    "registry_token": "{NewRegistryToken}"
-  }
-  ```
-
-#### 4. **Acknowledgment for Registry Updates**
-
-- The Proplet uses this topic to acknowledge whether the registry configuration update was successful or failed.
-
-  ```bash
-  m/:domain_id/c/:channel_id/control/manager/registry
-  ```
-
-- Payload is a JSON object indicating the success or failure of a registry update:
-  - Success:
-
-    ```json
-    {
-      "status": "success"
-    }
-    ```
-
-  - Failure:
-
-    ```json
-    {
-      "status": "failure",
-      "error": "{ErrorMessage}"
-    }
-    ```
+The FL update envelope includes `task_id`, `round_id`, `proplet_id`, `num_samples` (from `FL_NUM_SAMPLES`), `format` (from `FL_FORMAT`, default `f32-delta`), the result encoded as base64 in `update_b64`, and an empty `metrics` object.
