@@ -1,21 +1,17 @@
 ---
-title: Encrypted workloads in TEEs
+title: Encrypted workloads
 description: Run WebAssembly workloads inside hardware-protected environments.
 ---
 
-## What is a TEE
-
-A [Trusted Execution Environment](https://en.wikipedia.org/wiki/Trusted_execution_environment) (TEE) is a secure area inside a processor that protects code and data from unauthorized access. TEEs use hardware-based security features to create isolated execution environments.
+A [Trusted Execution Environment](https://en.wikipedia.org/wiki/Trusted_execution_environment) (TEE) is a secure area inside a processor that protects code and data from unauthorized access. TEEs use hardware-based isolation to ensure that even cloud providers or system administrators cannot read your workload's data while it runs.
 
 Common TEE technologies:
 
-- Intel TDX - Trust Domain Extensions for virtual machines
-- AMD SEV-SNP - Secure Encrypted Virtualization with Secure Nested Paging
-- Intel SGX - Software Guard Extensions for application enclaves
+- **Intel TDX** — Trust Domain Extensions for virtual machines
+- **AMD SEV-SNP** — Secure Encrypted Virtualization with Secure Nested Paging
+- **Intel SGX** — Software Guard Extensions for application enclaves
 
-TEEs ensure that even system administrators or cloud providers cannot access your workload's data or code while it runs.
-
-## How Propeller uses TEEs
+## Understand the flow
 
 Propeller runs WASM workloads inside TEEs by combining encrypted container images with hardware attestation.
 
@@ -25,17 +21,25 @@ Propeller runs WASM workloads inside TEEs by combining encrypted container image
 4. Key Broker Service validates attestation and releases decryption keys
 5. Proplet decrypts the WASM image and executes it
 
-All execution happens inside the protected environment. The WASM code and data remain encrypted until verified by the TEE hardware.
+All decryption and execution happens inside the protected environment.
 
 ## Prerequisites
 
-- [KBS](https://github.com/confidential-containers/trustee/blob/main/kbs/README.md) (Key Broker Service) - Stores encryption keys and validates attestations
-- [Attestation Agent](https://github.com/confidential-containers/guest-components/blob/main/attestation-agent/README.md) - Communicates with TEE hardware and KBS
-- Proplet with TEE support - Built with TEE features enabled
+- [Trustee](https://github.com/confidential-containers/trustee) — key broker and attestation stack
+- [Attestation Agent](https://github.com/confidential-containers/guest-components/blob/main/attestation-agent/README.md) — communicates with TEE hardware and KBS
+- `docker`, `docker compose` — to run the Trustee stack
+- `cargo` — to build the `kbs-client` tool
+- `skopeo`, `wasm-to-oci` — to push images to a registry
 
-## Set up the Key Broker Service
+## Set up Trustee
 
-### Start KBS with Docker
+[Trustee](https://github.com/confidential-containers/trustee) is the server-side attestation and secret management stack. It consists of three components:
+
+- **KBS** (Key Broker Service) — stores encryption keys and validates attestation reports
+- **AS** (Attestation Service) — verifies TEE evidence submitted by guests
+- **RVPS** (Reference Value Provider Service) — manages reference values used to verify TEE evidence
+
+### Start with Docker Compose
 
 ```bash
 git clone https://github.com/confidential-containers/trustee
@@ -45,7 +49,7 @@ openssl pkey -in kbs/config/private.key -pubout -out kbs/config/public.pub
 docker compose up -d
 ```
 
-This starts KBS on `http://localhost:8080`. I changed it to `8082` for this tutorial. This can be changed in the `docker-compose.yml` file.
+This starts KBS on `http://localhost:8080`. The port can be changed in `docker-compose.yml`, for this usecase I have changed it to `8082`
 
 The logs will look like this:
 
@@ -87,23 +91,23 @@ as-1           | 2026-02-17T12:37:34.254421Z  WARN attestation_service::policy_e
 as-1           | 2026-02-17T12:37:34.254588Z  WARN attestation_service::policy_engine::opa: Policy default_gpu already exists, so the default policy will not be written.
 ```
 
-### Generate encryption key
+### Generate an encryption key
 
-This is the key that will be used to encrypt the WASM image. It will be stored in KBS.
+This key encrypts the WASM image and is stored in KBS.
 
 ```bash
 openssl rand -base64 32 | tr -d '\n' > private_key
 ```
 
-### Upload private key to KBS
+### Build the KBS client
 
-Before we upload out private key, we need to build the kbs client. This will be used to upload the key to KBS.
+The `kbs-client` tool uploads and retrieves keys from KBS.
 
 ```bash
 cargo build --release
 ```
 
-Upload the private key to KBS storage:
+### Upload the key
 
 ```bash
 ./target/release/kbs-client \
@@ -206,39 +210,17 @@ The path `default/key/propeller-addition` identifies this key. Use it when creat
 
 ![KBS Setup](images/tee/kbs-setup.svg)
 
-## Build Proplet with TEE support
-
-### Install dependencies
-
-```bash
-cd propeller/proplet
-```
-
-### Compile with TEE features
-
-```bash
-cargo build --release
-```
-
-The binary will be in `target/release/proplet`.
-
 ## Encrypt a WASM image
 
-### Push WASM to local registry
-
-```bash
-wasm-to-oci push my-app.wasm localhost/my-app:latest
-```
-
-For example:
+### Push WASM to a registry
 
 ```bash
 wasm-to-oci push build/addition.wasm docker.io/rodneydav/tee-wasm-addition:latest --server "docker.io"
 ```
 
-### Encrypt with public key
+### Encrypt with the key
 
-Create and output directory to store encrypted image:
+Create an output directory for the encrypted image:
 
 ```bash
 mkdir -p output
@@ -270,27 +252,23 @@ The files in the output directory will look like this `ls output`:
 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a  76fa8c842f7ee81acc35aa4805f6ad0da144c1f092bc0ce4ecfc4cadf820f7a1  manifest.json  version
 ```
 
-### Push to remote registry
+### Push the encrypted image
 
-Before pusing to remote registry, you need to login to the registry:
+Login and push to a remote registry:
 
 ```bash
 skopeo login docker.io
-```
-
-```bash
 skopeo copy dir:$(pwd)/output docker://rodneydav/tee-wasm-addition:encrypted
 ```
 
 ![Image Encryption](images/tee/image-encryption.svg)
 
-## Using HAL
 
-Propeller provide a [Hardware Abstraction Layer (HAL)](https://github.com/confidential-containers/hal) to enable secure execution of workloads. It is a script for building and running Propeller CVMs (Confidential VMs) using QEMU.
+## Run a CVM with HAL
 
-### Prerequisites
+Propeller provides a [Hardware Abstraction Layer (HAL)](https://github.com/absmach/propeller/tree/main/hal/ubuntu) to build and run Confidential VMs (CVMs) using QEMU. The script installs and starts all required services inside an Ubuntu VM on first boot.
 
-Install required packages:
+### Install dependencies
 
 ```bash
 sudo apt-get update
@@ -301,34 +279,83 @@ sudo apt-get install -y \
   wget
 ```
 
-Since this script needs propeller to run, use [getting started guide](./getting-started.mdx) to build and run propeller.
+### Configure environment
+
+Set the required variables before running the script:
+
+| Variable             | Description               | Example             |
+| -------------------- | ------------------------- | ------------------- |
+| `PROPLET_DOMAIN_ID`  | SuperMQ domain identifier | `my-domain-123`     |
+| `PROPLET_CLIENT_ID`  | Unique client identifier  | `proplet-worker-01` |
+| `PROPLET_CLIENT_KEY` | Authentication key        | `secret-key-here`   |
+| `PROPLET_CHANNEL_ID` | Communication channel ID  | `channel-456`       |
+
+Optional variables:
+
+| Variable               | Description                          | Default                |
+| ---------------------- | ------------------------------------ | ---------------------- |
+| `PROPLET_MQTT_ADDRESS` | MQTT broker address                  | `tcp://localhost:1883` |
+| `KBS_URL`              | Key Broker Service URL               | `http://10.0.2.2:8082` |
+| `ENABLE_CVM`           | CVM mode (`auto`/`tdx`/`sev`/`none`) | `auto`                 |
+| `RAM`                  | VM memory                            | `16384M`               |
+| `CPU`                  | CPU cores                            | `4`                    |
+| `DISK_SIZE`            | Disk size                            | `40G`                  |
+
+### Choose a CVM mode
+
+The script auto-detects Intel TDX or AMD SEV. Override with `ENABLE_CVM`:
 
 ```bash
-# Build and run (default)
-sudo ./qemu.sh
+# Auto-detect (default)
+./qemu.sh
+
+# Force Intel TDX
+ENABLE_CVM=tdx ./qemu.sh
+
+# Force AMD SEV
+ENABLE_CVM=sev ./qemu.sh
+
+# Regular VM (no confidential computing)
+ENABLE_CVM=none ./qemu.sh
 ```
 
-**Example workflow:**
+### Build and run
+
+The script supports three targets:
+
+```bash
+# Build the CVM image (only needed once)
+./qemu.sh build
+
+# Boot an existing image
+./qemu.sh run
+
+# Build and run (default)
+./qemu.sh
+```
+
+A full example with credentials:
 
 ```bash
 export PROPLET_DOMAIN_ID="a93fa93e-30d0-425e-b5d1-c93cd916dca7"
 export PROPLET_CLIENT_ID="c902e51c-5eac-4a2d-a489-660b5f7ab461"
 export PROPLET_CLIENT_KEY="75a0fefe-9713-478d-aafd-72032c2d9958"
 export PROPLET_CHANNEL_ID="54bdaf41-0009-4d3e-bd49-6d7abda7a832"
-export PROPLET_MQTT_ADDRESS="tcp://0.tcp.in.ngrok.io:13946"
+export PROPLET_MQTT_ADDRESS="tcp://0.tcp.in.ngrok.io:10721"
 export KBS_URL="http://10.0.2.2:8082"
 ./qemu.sh
 ```
 
-The cloud-init configuration will install and build (on first boot):
+The first boot takes 10–15 minutes while cloud-init installs and compiles:
 
 - Rust toolchain
 - Wasmtime runtime
 - Attestation Agent
+- CoCo Keyprovider
 - Proplet
-- Systemd services for AA and Proplet
+- Systemd services for all components
 
-At the end the output will look like this:
+At the end, the output looks like this:
 
 ```bash
 [  797.319400] cloud-init[1084]:     Finished `release` profile [optimized] target(s) in 5m 23s
@@ -414,9 +441,37 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCKSZVnGU50NIq3HVR49M9Dt0EQUlFOat5WEH9AQywd
 [  OK  ] Reached target cloud-init.target - Cloud-init target.
 ```
 
-You can press `Enter` to login with username `propeller` and password `propeller`.
+### Access the VM
 
-Logs from proplet looks like this:
+Press `Enter` to log in with username `propeller` and password `propeller`. SSH is also available:
+
+```bash
+ssh -p 2222 propeller@localhost
+```
+
+The VM exposes these ports on the host:
+
+| Port    | Service                            |
+| ------- | ---------------------------------- |
+| `2222`  | SSH (forwarded from guest port 22) |
+| `50010` | Attestation Agent API              |
+| `50011` | CoCo Keyprovider                   |
+
+### Check service status
+
+```bash
+sudo systemctl status attestation-agent coco-keyprovider proplet
+```
+
+```bash
+sudo journalctl -u attestation-agent -f
+sudo journalctl -u coco-keyprovider -f
+sudo journalctl -u proplet -f
+```
+
+
+
+Proplet logs on successful start:
 
 ```bash
 propeller@propeller-cvm:~$ sudo journalctl -u proplet -f
@@ -432,24 +487,23 @@ Feb 17 16:16:09 propeller-cvm proplet[64080]: 2026-02-17T16:16:09.901929Z  INFO 
 Feb 17 16:16:09 propeller-cvm proplet[64080]: 2026-02-17T16:16:09.901932Z  INFO Subscribed to topic: m/a93fa93e-30d0-425e-b5d1-c93cd916dca7/c/54bdaf41-0009-4d3e-bd49-6d7abda7a832/registry/server
 ```
 
-## Configure attestation agent
+## Configure the attestation agent
 
-Attestation agent is automatically started by the quickstart script. It listens on port 50010 for keyprovider requests. You can start it manually with:
+The Attestation Agent is automatically started by the HAL script. It listens on port `50010` for keyprovider requests.
+
+To start it manually:
 
 ```bash
 attestation-agent --attestation_sock "127.0.0.1:50010"
 ```
 
-The agent listens on port 50010 for keyprovider requests.
 
-## Run Proplet in TEE mode
 
-The proplet is automatically started by the quickstart script. It will detect if a TEE is present and enable secure execution.
+## Configure Proplet for TEE mode
 
-### Configure environment
+Set these environment variables before starting Proplet:
 
 ```bash
-# KBS endpoint (required when TEE is detected)
 export PROPLET_DOMAIN_ID=your-domain-id
 export PROPLET_CLIENT_ID=your-client-id
 export PROPLET_CLIENT_KEY=your-client-key
@@ -459,7 +513,7 @@ export PROPLET_KBS_URI=http://10.0.2.2:8082
 export PROPLET_AA_CONFIG_PATH=/etc/default/proplet.toml
 ```
 
-The `PROPLET_AA_CONFIG_PATH` is the path to the attestation agent configuration file. This is used to communicate with the attestation agent. The default path is `/etc/default/proplet.toml`. It looks like this:
+The `PROPLET_AA_CONFIG_PATH` points to the Attestation Agent config. The default file looks like this:
 
 ```toml
 [token_configs]
@@ -467,15 +521,13 @@ The `PROPLET_AA_CONFIG_PATH` is the path to the attestation agent configuration 
 url = "http://10.0.2.2:8082"
 ```
 
-### Start Proplet
-
 Proplet is automatically started by the quickstart script. If you want to start it manually, use:
 
 ```bash
 proplet
 ```
 
-Proplet will log the detected TEE type:
+Proplet logs the detected TEE type on startup:
 
 ```bash
 2026-02-18T09:06:29.093299Z  INFO Starting Proplet (Rust) - Instance ID: fc2cb466-7a1f-48b0-8a1e-9e71f46a1f55
@@ -524,14 +576,14 @@ Create a task manifest for the encrypted WASM:
 
 Important fields:
 
-- `encrypted: true` - Tells Proplet to use TEE runtime
-- `image_url` - Location of encrypted image (required for encrypted workloads)
-- `kbs_resource_path` - Path to decryption key in KBS
-- Do not include `file` field for encrypted workloads
+- `encrypted: true` — tells Proplet to use TEE runtime
+- `image_url` — location of the encrypted OCI image
+- `kbs_resource_path` — path to the decryption key in KBS
+- Do not include a `file` field for encrypted workloads
 
 ## Verify execution
 
-Check task results:
+Check the task result:
 
 ```json
 {
@@ -556,9 +608,7 @@ Check task results:
 }
 ```
 
-The output shows execution status and results. All decryption and execution happened inside the TEE.
-
-The logs from proplet looks like this:
+Proplet logs show the full decryption and execution flow:
 
 ```bash
 2026-02-18T09:06:29.099082Z  INFO TEE runtime initialized successfully                                                                                                                                                                                            2026-02-18T09:06:29.140149Z  INFO Starting PropletService
@@ -585,7 +635,7 @@ warning: using `--invoke` with a function that returns values is experimental an
 
 ![Encrypted Task Execution](images/tee/encrypted-task-execution.svg)
 
-## Architecture details
+## Architecture
 
 ### Component interaction
 
@@ -594,19 +644,19 @@ warning: using `--invoke` with a function that returns values is experimental an
 ### Execution flow
 
 1. Detection - Proplet checks for TEE device files at startup
-2. Task receipt - Manager publishes encrypted task request
-3. Image pull - Proplet downloads encrypted OCI image
+2. Task receipt - Manager publishes an encrypted task request
+3. Image pull - Proplet downloads the encrypted OCI image
 4. Attestation - Hardware generates proof of TEE environment
 5. Key retrieval - KBS validates attestation and releases key
-6. Decryption - Image layers decrypted inside TEE
-7. Execution - WASM runs in protected environment
+6. Decryption - Image layers decrypted inside the TEE
+7. Execution - WASM runs in the protected environment
 8. Results - Output published to Manager via MQTT
 
 ![Attestation](images/tee/attestation.svg)
 
 ### Security guarantees
 
-- Confidentiality - Code and data encrypted until inside TEE
-- Integrity - Attestation proves correct TEE configuration
-- Isolation - Hardware prevents external access to execution
-- Verifiability - Attestation reports allow remote verification
+- Confidentiality - code and data encrypted until inside TEE
+- Integrity - attestation proves correct TEE configuration
+- Isolation - hardware prevents external access to execution
+- Verifiability - attestation reports allow remote verification
